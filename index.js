@@ -3,10 +3,10 @@ const { driverPrototype } = require('node-sqldb');
 const { Client, Pool } = require('pg');
 
 
-const transaction_isolation_levels = {
-	'rc':  'READ COMMITTED',
-	'rr':  'REPEATABLE READ',
-	'ser': 'SERIALIZABLE'
+const transactionIsolationLevels = {
+  'RC':  'READ COMMITTED',
+  'RR':  'REPEATABLE READ',
+  'SER': 'SERIALIZABLE'
 };
 
 const defaultOptions = {
@@ -27,6 +27,7 @@ const defaultOptions = {
 //    clientIdleTimeout (only for connection pools, default = 30000)
 // }
 function PG(options) {
+
   let logger;
   let dbPool;
   let numActiveClients = 0;
@@ -115,6 +116,8 @@ function PG(options) {
   }
 
 
+  this.txIsolationLevels = transactionIsolationLevels;
+
   this.initialize = async function(opts = {}) {
     logger = opts.logger || this.logger;
     if ((options.poolSize||0) !== 0) {
@@ -187,7 +190,7 @@ function PG(options) {
 
 
   this.startTransaction = async function(client, tx_isolation_level) {
-    const tx_level = transaction_isolation_levels[tx_isolation_level];
+    const tx_level = this.txIsolationLevels[tx_isolation_level];
     if (tx_level == null){
       logger.error("Invalid tx isolation level [%s]!", tx_isolation_level);
       throw new Error("Invalid transaction isolation level!");
@@ -204,6 +207,43 @@ function PG(options) {
   // Optional method, defaults to: client.query('ROLLBACK')
   // async function rollbackTransaction(client) {
   // }
+
+
+  this.ensureMigrationsTable = async function (migrationsTableName) {
+    try {
+      const client = await this.getClient();
+      await this.startTransaction(client, transactionIsolationLevels.RR);
+      await client.query(`CREATE TABLE IF NOT EXISTS ${migrationsTableName}(name varchar(255) NOT NULL PRIMARY KEY, updated_at timestamp NOT NULL)`);
+      await client.query('COMMIT');
+    }
+    finally {
+      await this.releaseClient(client);
+    }
+    logger.debug("Migrations table checked OK.");
+  }
+
+
+  this.listExecutedMigrationNames = async function(migrationsTableName) {
+    try {
+      const client = await this.getClient();
+      const rows = await this.query(client, `SELECT name FROM ${migrationsTableName} ORDER BY name`);
+      return rows.map(r => r.name);
+    }
+    finally {
+      await this.releaseClient(client);
+    }
+  }
+
+
+  this.logMigrationSuccessful = async function(conn, migrationsTableName, migrationName) {
+    const isoTime = new Date().toISOString();
+    await conn.exec(`INSERT INTO ${migrationsTableName}(name,updated_at) VALUES($1,$2)`, [migrationName, isoTime]);
+  }
+
+  
+  this.getMigrationTransactionIsolationLevel = function() {
+    return transactionIsolationLevels.RR;
+  }
 }
 
 
