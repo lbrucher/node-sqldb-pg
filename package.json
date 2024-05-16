@@ -1,0 +1,23 @@
+{
+  "name": "node-sqldb-pg",
+  "version": "1.0.0",
+  "description": "Postgres driver for the node-sqldb library",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test mocha --recursive --slow 200 -R spec test"
+  },
+  "keywords": [
+    "sql",
+    "pg",
+    "postgres"
+  ],
+  "author": "Laurent Brucher <laurent.brucher@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "mocha": "^10.4.0",
+    "should": "^13.2.3"
+  }
+}
