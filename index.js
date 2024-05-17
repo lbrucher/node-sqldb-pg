@@ -3,10 +3,18 @@ const { driverPrototype } = require('node-sqldb');
 const { Client, Pool } = require('pg');
 
 
+// public
 const transactionIsolationLevels = {
-  'RC':  'READ COMMITTED',
-  'RR':  'REPEATABLE READ',
-  'SER': 'SERIALIZABLE'
+  'RC':  'rc',
+  'RR':  'rr',
+  'SER': 'ser'
+};
+
+// private
+const _transactionIsolationLevels = {
+  'rc':  'READ COMMITTED',
+  'rr':  'REPEATABLE READ',
+  'ser': 'SERIALIZABLE'
 };
 
 const defaultOptions = {
@@ -27,7 +35,6 @@ const defaultOptions = {
 //    clientIdleTimeout (only for connection pools, default = 30000)
 // }
 function PG(options) {
-
   let logger;
   let dbPool;
   let numActiveClients = 0;
@@ -117,6 +124,8 @@ function PG(options) {
 
 
   this.txIsolationLevels = transactionIsolationLevels;
+  this.dateIso = (ms) => (ms==null ? new Date() : new Date(ms)).toISOString();
+
 
   this.initialize = async function(opts = {}) {
     logger = opts.logger || this.logger;
@@ -190,7 +199,7 @@ function PG(options) {
 
 
   this.startTransaction = async function(client, tx_isolation_level) {
-    const tx_level = this.txIsolationLevels[tx_isolation_level];
+    const tx_level = _transactionIsolationLevels[tx_isolation_level];
     if (tx_level == null){
       logger.error("Invalid tx isolation level [%s]!", tx_isolation_level);
       throw new Error("Invalid transaction isolation level!");
@@ -210,10 +219,10 @@ function PG(options) {
 
 
   this.ensureMigrationsTable = async function (migrationsTableName) {
+    const client = await this.getClient();
     try {
-      const client = await this.getClient();
       await this.startTransaction(client, transactionIsolationLevels.RR);
-      await client.query(`CREATE TABLE IF NOT EXISTS ${migrationsTableName}(name varchar(255) NOT NULL PRIMARY KEY, updated_at timestamp NOT NULL)`);
+      const xx = await client.query(`CREATE TABLE IF NOT EXISTS ${migrationsTableName}(name varchar(255) NOT NULL PRIMARY KEY, updated_at timestamp NOT NULL)`);
       await client.query('COMMIT');
     }
     finally {
@@ -224,8 +233,8 @@ function PG(options) {
 
 
   this.listExecutedMigrationNames = async function(migrationsTableName) {
+    const client = await this.getClient();
     try {
-      const client = await this.getClient();
       const rows = await this.query(client, `SELECT name FROM ${migrationsTableName} ORDER BY name`);
       return rows.map(r => r.name);
     }
@@ -236,8 +245,7 @@ function PG(options) {
 
 
   this.logMigrationSuccessful = async function(conn, migrationsTableName, migrationName) {
-    const isoTime = new Date().toISOString();
-    await conn.exec(`INSERT INTO ${migrationsTableName}(name,updated_at) VALUES($1,$2)`, [migrationName, isoTime]);
+    await conn.exec(`INSERT INTO ${migrationsTableName}(name,updated_at) VALUES($1,$2)`, [migrationName, this.dateIso()]);
   }
 
   
