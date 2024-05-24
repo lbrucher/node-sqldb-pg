@@ -1,7 +1,7 @@
 {
-  "name": "node-sqldb-pg",
+  "name": "use-db-pg",
   "version": "1.0.0",
-  "description": "Postgres driver for the node-sqldb library",
+  "description": "Postgres driver for the use-db library",
   "main": "index.js",
   "scripts": {
     "test": "NODE_ENV=test mocha --recursive --slow 200 -R spec test"

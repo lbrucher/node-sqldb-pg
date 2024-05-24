@@ -1,5 +1,5 @@
 'use strict';
-const { driverPrototype } = require('node-sqldb');
+const { driverPrototype } = require('use-db');
 const { Client, Pool } = require('pg');
 
 

@@ -1,4 +1,4 @@
-# Postgres driver for the node-sqldb library
+# Postgres driver for the use-db library
 
-Postgres driver for the `node-sqldb` library.
+Postgres driver for the `use-db` library.
 
