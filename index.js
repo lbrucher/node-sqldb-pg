@@ -222,7 +222,7 @@ function PG(options) {
     const client = await this.getClient();
     try {
       await this.startTransaction(client, transactionIsolationLevels.RR);
-      const xx = await client.query(`CREATE TABLE IF NOT EXISTS ${migrationsTableName}(name varchar(255) NOT NULL PRIMARY KEY, updated_at timestamp NOT NULL)`);
+      await client.query(`CREATE TABLE IF NOT EXISTS ${migrationsTableName}(name varchar(255) NOT NULL PRIMARY KEY, updated_at timestamp NOT NULL)`);
       await client.query('COMMIT');
     }
     finally {

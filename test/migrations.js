@@ -12,7 +12,7 @@ describe('Migrations', () => {
       await TH.createPg(TH.dbOpts, async (pg, client) => {
         // Ensure there is no 'migs' table
         try{
-          const xx = await pg.query(client, "SELECT * FROM migs");
+          await pg.query(client, "SELECT * FROM migs");
           should.fail("Should not get here!");
         }
         catch(err){
