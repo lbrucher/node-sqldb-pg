@@ -44,7 +44,7 @@ function PG(options) {
     const opts = {
       host:     options.host,
       port:     options.port,
-      user:     options.username,
+      user:     options.user,
       password: options.password,
       database: options.database,
     };
